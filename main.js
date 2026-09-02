@@ -330,6 +330,10 @@ const i18n = {
     'ct.message': { zh: '留言', en: 'Message' },
     'ct.message.ph': { zh: '请简要描述您的需求...', en: 'Please briefly describe your needs...' },
     'ct.submit': { zh: '提交咨询', en: 'Submit Inquiry' },
+    'ct.sending': { zh: '提交中...', en: 'Sending...' },
+    'ct.success.title': { zh: '提交成功！', en: 'Submitted Successfully!' },
+    'ct.success.desc': { zh: '感谢您的咨询，我们将在 24 小时内与您联系。', en: 'Thank you for your inquiry. We will contact you within 24 hours.' },
+    'ct.error': { zh: '提交失败，请稍后重试或直接发邮件至 info@sammafinance.com', en: 'Submission failed. Please try again later or email info@sammafinance.com directly.' },
     'ct.note': { zh: '提交即表示您同意我们的隐私政策。我们承诺保护您的个人信息安全。', en: 'By submitting, you agree to our privacy policy. We promise to protect your personal information.' },
     'ct.phone.label': { zh: '电话', en: 'Phone' },
     'ct.phone.sub': { zh: '工作日 9:00 - 18:00 (CET)', en: 'Business Days 9:00 - 18:00 (CET)' },
@@ -477,11 +481,38 @@ if (dots.length && slides.length) {
 // Contact form
 const contactForm = document.getElementById('contactForm');
 const formSuccess = document.getElementById('formSuccess');
+const formError = document.getElementById('formError');
 if (contactForm && formSuccess) {
   contactForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    contactForm.style.display = 'none';
-    formSuccess.style.display = 'block';
+    const submitBtn = contactForm.querySelector('button[type="submit"]');
+    const btnText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = (i18n.dict && i18n.dict['ct.sending'] && i18n.dict['ct.sending'][i18n.currentLang]) || 'Sending...';
+
+    const data = new FormData(contactForm);
+    data.append('_subject', 'Website Inquiry - sammafinance.com');
+    data.append('_template', 'table');
+    data.append('_captcha', 'false');
+
+    fetch('https://formsubmit.co/ajax/info@sammafinance.com', {
+      method: 'POST',
+      body: data
+    })
+    .then(res => res.json())
+    .then(result => {
+      if (result.success === 'true' || result.success === true) {
+        contactForm.style.display = 'none';
+        formSuccess.style.display = 'block';
+      } else {
+        throw new Error('FormSubmit rejected');
+      }
+    })
+    .catch(() => {
+      formError.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.textContent = btnText;
+    });
   });
 }
 
